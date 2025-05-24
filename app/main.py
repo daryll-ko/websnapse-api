@@ -1,10 +1,12 @@
 import asyncio
+
 from fastapi import FastAPI, WebSocket
-from app.errors import WebsnapseError
-from app.models import SNPSystem, Regular
-from app.utils import validate_rule
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.errors import WebsnapseError
+from app.models import Regular, SNPSystem
 from app.SNP import MatrixSNPSystem
+from app.utils import validate_rule
 
 app = FastAPI()
 origins = [
@@ -163,6 +165,30 @@ async def validate_neuron(neuron: Regular):
     except Exception as e:
         print(e)
         return {"type": "error", "message": str(e)}
+
+
+@app.websocket("/ws/compute")
+async def compute(websocket: WebSocket):
+    await websocket.accept()
+
+    try:
+        req = await websocket.receive_json()
+        print(req)
+
+        from random import randint
+        N = 5
+
+        if req['interp'] == '':
+            verdicts = ['?' for _ in range(N)]
+        else:
+            verdicts = ['Accepted' if randint(0, 1) == 1 else 'Rejected' for _ in range(N)]
+
+        await websocket.send_json({
+            "type": "judge",
+            "verdicts": verdicts,
+        })
+    except Exception as e:
+        await websocket.send_json({"type": "error", "message": str(e)})
 
 
 @app.websocket("/ws/simulate/guided")
