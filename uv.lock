@@ -1,0 +1,18 @@
+version = 1
+requires-python = ">=3.9.6"
+
+[manifest]
+members = [
+    "app",
+    "websnapse-api",
+]
+
+[[package]]
+name = "app"
+version = "0.1.0"
+source = { virtual = "app" }
+
+[[package]]
+name = "websnapse-api"
+version = "0.1.0"
+source = { virtual = "." }
