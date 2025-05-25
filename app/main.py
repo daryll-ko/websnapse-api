@@ -177,10 +177,10 @@ async def compute(websocket: WebSocket):
         req = await websocket.receive_json()
         sys = parse_dict(req['data'])
 
-        N = 5
+        n = len(req['inputs'])
 
         if req['interp'] == '':
-            verdicts = ['?' for _ in range(N)]
+            verdicts = ['?' for _ in range(n)]
         elif req['interp'] == 'dif':
             inputs = []
             for x in req['inputs']:
@@ -196,9 +196,9 @@ async def compute(websocket: WebSocket):
                 else:
                     verdicts.append("Accepted" if sys.accepts_dis(x) else "Rejected")
         else:
-            verdicts = ['?' for _ in range(N)]
+            verdicts = ['?' for _ in range(n)]
 
-        assert len(verdicts) == N
+        assert len(verdicts) == n
 
         await websocket.send_json({
             "type": "judge",
