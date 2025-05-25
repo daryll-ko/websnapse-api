@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.errors import WebsnapseError
 from app.models import Regular, SNPSystem
+from app.parse import parse_dict
 from app.SNP import MatrixSNPSystem
+from app.SNP4 import JSON
 from app.utils import validate_rule
 
 app = FastAPI()
@@ -173,15 +175,30 @@ async def compute(websocket: WebSocket):
 
     try:
         req = await websocket.receive_json()
-        print(req)
+        sys = parse_dict(req['data'])
 
-        from random import randint
         N = 5
 
         if req['interp'] == '':
             verdicts = ['?' for _ in range(N)]
+        elif req['interp'] == 'dif':
+            inputs = []
+            for x in req['inputs']:
+                try:
+                    x = int(x)
+                    inputs.append(x)
+                except:
+                    inputs.append('?')
+            verdicts = []
+            for x in inputs:
+                if x == '?':
+                    verdicts.append('?')
+                else:
+                    verdicts.append("Accepted" if sys.accepts_dis(x) else "Rejected")
         else:
-            verdicts = ['Accepted' if randint(0, 1) == 1 else 'Rejected' for _ in range(N)]
+            verdicts = ['?' for _ in range(N)]
+
+        assert len(verdicts) == N
 
         await websocket.send_json({
             "type": "judge",
