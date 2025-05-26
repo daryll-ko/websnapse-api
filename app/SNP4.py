@@ -437,8 +437,22 @@ class System:
     def get_next_det(self) -> System:
         return next(self.get_next_nondet())
 
+    def _get_inputs(self):
+        for neuron in self.neurons:
+            if neuron.type_ == "input":
+                assert isinstance(neuron.content, list)
+                if len(neuron.content) > 0 and neuron.content[0] == 1:
+                    for synapse in self._adjacency_list[
+                        self._neuron_to_index[neuron.id]
+                    ]:
+                        to, weight = synapse.to, synapse.weight
+                        to_neuron = self.neurons[self._neuron_to_index[to]]
+                        to_neuron.add(weight)
+                neuron.content = neuron.content[1:]
+
     def get_next_nondet(self) -> Iterator[System]:
         possible_rules = self._get_possible_rules()
+        self._get_inputs()
 
         if len(possible_rules) > 0:
             for chosen_rules in self._choose_possible_rules(possible_rules):
@@ -446,11 +460,12 @@ class System:
                 clone._apply_chosen_rules(chosen_rules)
                 yield clone
         else:
-            self._apply_chosen_rules()
-            yield self
+            clone = deepcopy(self)
+            clone._apply_chosen_rules()
+            yield clone
 
     def accepts_dis(self, n: int) -> bool:
-        for ans in self.get_configs(n + 1, det=False, lazy=True):
+        for ans in self.get_configs(n + 10, det=False, lazy=True):
             if ans.get_spike_distance() == n:
                 return True
         return False
@@ -465,7 +480,7 @@ class System:
         # iterative
 
         st = []
-        st.append((0, self))
+        st.append((0, deepcopy(self)))
         res = []
 
         while st:
