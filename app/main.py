@@ -181,11 +181,17 @@ async def compute(websocket: WebSocket):
 
         if req['interp'] == '':
             verdicts = ['?' for _ in range(n)]
-        elif req['interp'] == 'dif':
+        elif req['interp'] in ['dif', 'bin']:
             inputs = []
             for x in req['inputs']:
                 try:
-                    x = int(x)
+                    x = (int if req['interp'] == 'dif' else str)(x)
+
+                    if req['interp'] == 'bin':
+                        assert isinstance(x, str)
+                        if len(x) == 0 or not all(c in '01' for c in x):
+                            raise ValueError
+
                     inputs.append(x)
                 except:
                     inputs.append('?')
@@ -194,7 +200,7 @@ async def compute(websocket: WebSocket):
                 if x == '?':
                     verdicts.append('?')
                 else:
-                    verdicts.append("Accepted" if sys.accepts_dis(x) else "Rejected")
+                    verdicts.append("Accepted" if (sys.accepts_dis if req['interp'] == 'dif' else sys.accepts_lit)(x) else "Rejected")
         else:
             verdicts = ['?' for _ in range(n)]
 
